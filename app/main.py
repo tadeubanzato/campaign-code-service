@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from time import perf_counter
 from uuid import uuid4
+import re
 
 from flask import Flask, jsonify, request
 
@@ -81,6 +82,34 @@ def generate():
         return error_response(400, "VALIDATION_ERROR", str(e))
     except Exception as e:
         return error_response(500, "INTERNAL_ERROR", "Unexpected generator failure", str(e))
+
+    # Strongly preserve acronym from campaign_name (e.g., MLB.TV -> MLB)
+    m = re.search(r"\b([A-Z]{2,5})\b", campaign_name)
+    if m:
+        hint = m.group(1)
+        year_match = re.search(r"\b(\d{4})\b", campaign_name)
+        y4 = year_match.group(1) if year_match else ""
+        y2 = y4[-2:] if y4 else ""
+        priority = []
+        if y4:
+            priority.append(f"{hint}{y4}")
+        if y2:
+            priority.append(f"{hint}{y2}")
+        if not priority:
+            priority.append(hint)
+
+        merged = []
+        seen = set()
+        for p in priority + codes:
+            p = re.sub(r"[^A-Z0-9]", "", p.upper())
+            if len(p) < min_len:
+                p = (p + "23456789")[:min_len]
+            if len(p) > max_len:
+                p = p[:max_len]
+            if p not in seen:
+                merged.append(p)
+                seen.add(p)
+        codes = merged[:count]
 
     elapsed_ms = int((perf_counter() - started) * 1000)
 
