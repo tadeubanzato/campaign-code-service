@@ -40,6 +40,7 @@ Request body:
 ```json
 {
   "campaign_name": "Spring Aurora Lights 2026",
+  "campaign_description": "Seasonal in-store lighting campaign for premium home decor shoppers in North America.",
   "min_len": 6,
   "max_len": 10,
   "include_year": true,
@@ -55,8 +56,10 @@ Success (`200`):
   "ok": true,
   "data": {
     "campaign_name": "Spring Aurora Lights 2026",
+    "campaign_description": "Seasonal in-store lighting campaign for premium home decor shoppers in North America.",
     "generated_code": "AULI2026",
-    "candidates": ["AULI2026", "SPAU26", "AURS26"]
+    "candidates": ["AULI2026", "SPAU26", "AURS26"],
+    "generation_mode": "rules_only"
   },
   "meta": {
     "timestamp": "2026-02-23T03:00:00+00:00",

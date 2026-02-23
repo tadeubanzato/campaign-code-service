@@ -54,6 +54,7 @@ def generate():
         return error_response(400, "INVALID_JSON", "Request body must be valid JSON")
 
     campaign_name = str(data.get('campaign_name', '')).strip()
+    campaign_description = str(data.get('campaign_description', '')).strip()
     if not campaign_name:
         return error_response(400, "VALIDATION_ERROR", "campaign_name is required")
 
@@ -67,8 +68,9 @@ def generate():
         return error_response(400, "VALIDATION_ERROR", "Invalid request fields", str(e))
 
     try:
+        combined_context = campaign_name if not campaign_description else f"{campaign_name} {campaign_description}"
         codes = generate_codes(
-            campaign_name,
+            combined_context,
             min_len=min_len,
             max_len=max_len,
             include_year=include_year,
@@ -87,8 +89,10 @@ def generate():
             "ok": True,
             "data": {
                 "campaign_name": campaign_name,
+                "campaign_description": campaign_description,
                 "generated_code": codes[0],
                 "candidates": codes,
+                "generation_mode": "rules_only",
             },
             "meta": {
                 "timestamp": utc_now_iso(),

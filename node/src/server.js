@@ -36,6 +36,7 @@ app.post('/generate', (req, res) => {
 
   const body = req.body || {};
   const campaignName = String(body.campaign_name || '').trim();
+  const campaignDescription = String(body.campaign_description || '').trim();
   if (!campaignName) {
     return errorResponse(res, 400, 'VALIDATION_ERROR', 'campaign_name is required');
   }
@@ -55,7 +56,11 @@ app.post('/generate', (req, res) => {
   }
 
   try {
-    const candidates = generateCodes(campaignName, {
+    const combinedContext = campaignDescription
+      ? `${campaignName} ${campaignDescription}`
+      : campaignName;
+
+    const candidates = generateCodes(combinedContext, {
       minLen,
       maxLen,
       includeYear,
@@ -67,8 +72,10 @@ app.post('/generate', (req, res) => {
       ok: true,
       data: {
         campaign_name: campaignName,
+        campaign_description: campaignDescription,
         generated_code: candidates[0],
         candidates,
+        generation_mode: 'rules_only',
       },
       meta: {
         timestamp: utcNowIso(),
