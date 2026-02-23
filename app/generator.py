@@ -1,6 +1,6 @@
 import re
 import random
-from typing import List
+from typing import List, Optional
 
 VOWELS = set("AEIOU")
 
@@ -71,7 +71,7 @@ def generate_codes(
     max_len: int = 12,
     include_year: bool = True,
     count: int = 8,
-    seed: int | None = None,
+    seed: Optional[int] = None,
 ) -> List[str]:
     if seed is not None:
         random.seed(seed)
