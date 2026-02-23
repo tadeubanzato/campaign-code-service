@@ -9,6 +9,8 @@ Professional-grade lightweight API to generate human-readable 6–12 character c
 - Preserves explicit acronym hints from input context (e.g., `MLB`, `NBA`) and prioritizes them in top candidates
 - Context weighting: `campaign_name` is primary; `campaign_description` is secondary
 - Semantic deterministic templates (e.g., STREAM→STRM, FREE→FREE, TRIAL→TRY) to improve end-user relevance
+- Request correlation: optional `request_id` is echoed back in response
+- Consistency: same `campaign_name` + `campaign_description` returns the same `generated_code` (stored cache)
 - Strong API contract with:
   - structured success response
   - structured error response
@@ -42,6 +44,7 @@ Request body:
 
 ```json
 {
+  "request_id": "req-12345",
   "campaign_name": "Spring Aurora Lights 2026",
   "campaign_description": "Seasonal in-store lighting campaign for premium home decor shoppers in North America.",
   "min_len": 6,

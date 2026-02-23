@@ -1,10 +1,36 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { generateCodes } from './generator.js';
 
 const app = express();
 app.use(express.json({ limit: '256kb' }));
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STORE_PATH = path.join(__dirname, 'code_store.json');
+
+function normalizeKey(campaignName, campaignDescription) {
+  const n = String(campaignName || '').trim().toUpperCase().replace(/\s+/g, ' ');
+  const d = String(campaignDescription || '').trim().toUpperCase().replace(/\s+/g, ' ');
+  return `${n}||${d}`;
+}
+
+function loadStore() {
+  try {
+    if (!fs.existsSync(STORE_PATH)) return {};
+    return JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveStore(store) {
+  fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2));
+}
 
 function utcNowIso() {
   return new Date().toISOString();
@@ -28,13 +54,13 @@ app.get('/health', (_req, res) => {
 
 app.post('/generate', (req, res) => {
   const started = performance.now();
-  const requestId = randomUUID();
 
   if (!req.is('application/json')) {
     return errorResponse(res, 400, 'INVALID_JSON', 'Content-Type must be application/json');
   }
 
   const body = req.body || {};
+  const requestId = String(body.request_id || '').trim() || randomUUID();
   const campaignName = String(body.campaign_name || '').trim();
   const campaignDescription = String(body.campaign_description || '').trim();
   if (!campaignName) {
@@ -56,23 +82,35 @@ app.post('/generate', (req, res) => {
   }
 
   try {
-    // campaign_name is primary context; description is secondary signal
-    const combinedContext = campaignDescription
-      ? `${campaignName} ${campaignName} ${campaignDescription}`
-      : campaignName;
+    const key = normalizeKey(campaignName, campaignDescription);
+    const store = loadStore();
 
-    const candidates = generateCodes(combinedContext, {
-      minLen,
-      maxLen,
-      includeYear,
-      count,
-    });
+    let generatedCode;
+    if (store[key]) {
+      generatedCode = store[key];
+    } else {
+      // campaign_name is primary context; description is secondary signal
+      const combinedContext = campaignDescription
+        ? `${campaignName} ${campaignName} ${campaignDescription}`
+        : campaignName;
+
+      const candidates = generateCodes(combinedContext, {
+        minLen,
+        maxLen,
+        includeYear,
+        count,
+      });
+
+      generatedCode = candidates[0];
+      store[key] = generatedCode;
+      saveStore(store);
+    }
 
     const elapsedMs = Math.round(performance.now() - started);
     return res.json({
       ok: true,
       data: {
-        generated_code: candidates[0],
+        generated_code: generatedCode,
       },
       meta: {
         timestamp: utcNowIso(),

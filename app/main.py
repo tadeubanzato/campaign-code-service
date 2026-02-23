@@ -2,12 +2,34 @@ from datetime import datetime, timezone
 from time import perf_counter
 from uuid import uuid4
 import re
+import json
+from pathlib import Path
 
 from flask import Flask, jsonify, request
 
 from .generator import generate_codes
 
 app = Flask(__name__)
+STORE_PATH = Path(__file__).resolve().parent / 'code_store.json'
+
+
+def _normalize_key(campaign_name: str, campaign_description: str) -> str:
+    n = re.sub(r"\s+", " ", campaign_name.strip().upper())
+    d = re.sub(r"\s+", " ", campaign_description.strip().upper())
+    return f"{n}||{d}"
+
+
+def _load_store() -> dict:
+    if not STORE_PATH.exists():
+        return {}
+    try:
+        return json.loads(STORE_PATH.read_text())
+    except Exception:
+        return {}
+
+
+def _save_store(store: dict) -> None:
+    STORE_PATH.write_text(json.dumps(store, ensure_ascii=False, indent=2))
 
 
 def utc_now_iso() -> str:
@@ -48,11 +70,13 @@ def health():
 @app.post('/generate')
 def generate():
     started = perf_counter()
-    req_id = str(uuid4())
 
     data = request.get_json(silent=True)
     if data is None:
         return error_response(400, "INVALID_JSON", "Request body must be valid JSON")
+
+    client_request_id = str(data.get('request_id', '')).strip()
+    req_id = client_request_id if client_request_id else str(uuid4())
 
     campaign_name = str(data.get('campaign_name', '')).strip()
     campaign_description = str(data.get('campaign_description', '')).strip()
@@ -68,17 +92,23 @@ def generate():
     except Exception as e:
         return error_response(400, "VALIDATION_ERROR", "Invalid request fields", str(e))
 
+    key = _normalize_key(campaign_name, campaign_description)
+    store = _load_store()
+
     try:
-        # campaign_name is primary context; description is secondary signal
-        combined_context = campaign_name if not campaign_description else f"{campaign_name} {campaign_name} {campaign_description}"
-        codes = generate_codes(
-            combined_context,
-            min_len=min_len,
-            max_len=max_len,
-            include_year=include_year,
-            count=count,
-            seed=seed,
-        )
+        if key in store:
+            codes = [store[key]]
+        else:
+            # campaign_name is primary context; description is secondary signal
+            combined_context = campaign_name if not campaign_description else f"{campaign_name} {campaign_name} {campaign_description}"
+            codes = generate_codes(
+                combined_context,
+                min_len=min_len,
+                max_len=max_len,
+                include_year=include_year,
+                count=count,
+                seed=seed,
+            )
     except ValueError as e:
         return error_response(400, "VALIDATION_ERROR", str(e))
     except Exception as e:
@@ -112,13 +142,18 @@ def generate():
                 seen.add(p)
         codes = merged[:count]
 
+    generated_code = codes[0]
+    if key not in store:
+        store[key] = generated_code
+        _save_store(store)
+
     elapsed_ms = int((perf_counter() - started) * 1000)
 
     return jsonify(
         {
             "ok": True,
             "data": {
-                "generated_code": codes[0]
+                "generated_code": generated_code
             },
             "meta": {
                 "timestamp": utc_now_iso(),
