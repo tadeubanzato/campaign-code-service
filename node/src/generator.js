@@ -4,6 +4,19 @@ function cleanTokens(name) {
   return (name.toUpperCase().match(/[A-Z0-9]+/g) || []).filter(Boolean);
 }
 
+function acronymHints(raw) {
+  const hints = raw.match(/\b[A-Z]{2,5}\b/g) || [];
+  const seen = new Set();
+  const out = [];
+  for (const h of hints) {
+    if (!seen.has(h)) {
+      out.push(h);
+      seen.add(h);
+    }
+  }
+  return out;
+}
+
 function extractYear(tokens) {
   for (let i = tokens.length - 1; i >= 0; i--) {
     const t = tokens[i];
@@ -82,14 +95,22 @@ export function generateCodes(
     throw new Error('length bounds must be within 6-12 and min<=max');
   }
 
-  const tokens = cleanTokens(campaignName || '');
+  const raw = campaignName || '';
+  const tokens = cleanTokens(raw);
   if (!tokens.length) throw new Error('campaign_name must contain letters or digits');
 
+  const hints = acronymHints(raw);
   const year = includeYear ? extractYear(tokens) : '';
   const year2 = year ? year.slice(-2) : '';
   const words = lettersOnly(tokens);
 
   const cands = new Set();
+  const priority = [];
+  for (const a of hints) {
+    if (year) priority.push(a + year);
+    if (year2) priority.push(a + year2);
+    priority.push(a + String(randInt(20, 99)));
+  }
 
   if (words.length) {
     const acronym = words.map((w) => w[0]).join('');
@@ -126,5 +147,22 @@ export function generateCodes(
     .filter((c) => c.length >= minLen && c.length <= maxLen);
 
   const ranked = [...new Set(normalized)].sort((a, b) => score(b, minLen, maxLen) - score(a, minLen, maxLen));
-  return ranked.slice(0, count);
+
+  const ordered = [];
+  const seen = new Set();
+  for (const p of priority) {
+    const fitted = fit(p, minLen, maxLen);
+    if (!seen.has(fitted)) {
+      ordered.push(fitted);
+      seen.add(fitted);
+    }
+  }
+  for (const c of ranked) {
+    if (!seen.has(c)) {
+      ordered.push(c);
+      seen.add(c);
+    }
+  }
+
+  return ordered.slice(0, count);
 }

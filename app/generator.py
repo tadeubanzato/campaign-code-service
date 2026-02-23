@@ -10,6 +10,18 @@ def _clean_tokens(name: str) -> List[str]:
     return [p for p in parts if p]
 
 
+def _acronym_hints(raw: str) -> List[str]:
+    # Preserve explicit uppercase acronyms from input context, e.g. MLB, NBA, CRM.
+    hints = re.findall(r"\b[A-Z]{2,5}\b", raw)
+    # de-dup preserving order
+    out = []
+    seen = set()
+    for h in hints:
+        if h not in seen:
+            out.append(h)
+            seen.add(h)
+    return out
+
 def _extract_year(tokens: List[str]) -> str:
     for t in reversed(tokens):
         if t.isdigit() and len(t) == 4:
@@ -83,11 +95,20 @@ def generate_codes(
     if not tokens:
         raise ValueError("campaign_name must contain letters or digits")
 
+    acronym_hints = _acronym_hints(campaign_name)
     year = _extract_year(tokens) if include_year else ""
     year2 = year[-2:] if year else ""
     words = _letters_only(tokens)
 
     cands = set()
+    priority = []
+
+    for a in acronym_hints:
+        if year:
+            priority.append(a + year)
+        if year2:
+            priority.append(a + year2)
+        priority.append(a + str(random.randint(20, 99)))
 
     # patterns
     if words:
@@ -119,4 +140,18 @@ def generate_codes(
     normalized = [c for c in normalized if min_len <= len(c) <= max_len]
 
     ranked = sorted(set(normalized), key=lambda c: _score(c, min_len, max_len), reverse=True)
-    return ranked[:count]
+
+    # Put acronym-preserving candidates first when available.
+    ordered = []
+    seen = set()
+    for p in priority:
+        fitted = _fit(p, min_len, max_len)
+        if fitted not in seen:
+            ordered.append(fitted)
+            seen.add(fitted)
+    for c in ranked:
+        if c not in seen:
+            ordered.append(c)
+            seen.add(c)
+
+    return ordered[:count]

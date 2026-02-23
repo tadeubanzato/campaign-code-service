@@ -6,6 +6,7 @@ Professional-grade lightweight API to generate human-readable 6–12 character c
 
 - Deterministic + fast generation (no heavy model required)
 - Human-readable alphanumeric code candidates
+- Preserves explicit acronym hints from input context (e.g., `MLB`, `NBA`) and prioritizes them in top candidates
 - Strong API contract with:
   - structured success response
   - structured error response
