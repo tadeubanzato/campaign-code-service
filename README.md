@@ -120,16 +120,15 @@ curl -X POST http://127.0.0.1:8080/generate \
   }'
 ```
 
-## Docker
+## Production run (no Docker)
+
+Use Gunicorn directly on host:
 
 ```bash
-docker build -t campaign-code-service .
-docker run --rm -p 8080:8080 campaign-code-service
-```
-
-Production container command uses Gunicorn:
-
-```bash
+cd campaign-code-service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 gunicorn -w 2 -b 0.0.0.0:8080 app.main:app
 ```
 
@@ -172,9 +171,11 @@ Response contract is intentionally aligned with the Python service:
 - `meta.request_id`
 - `meta.processing_ms`
 
-## Azure-ready
+## Deployment note
 
-Both versions are deployable to:
-- Azure Container Apps
-- Azure App Service (container)
-- Azure Container Instances
+Since you're integrating this into your current script/runtime, you can run both services directly on host (no container required).
+
+- Python service: port `8080`
+- Node service: port `8081`
+
+If later needed, this can still be wrapped in system services (launchd/pm2) for auto-restart.
