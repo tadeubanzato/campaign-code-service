@@ -58,12 +58,7 @@ Success (`200`):
 {
   "ok": true,
   "data": {
-    "campaign_name": "Spring Aurora Lights 2026",
-    "campaign_description": "Seasonal in-store lighting campaign for premium home decor shoppers in North America.",
-    "generated_code": "AULI2026",
-    "candidates": ["AULI2026", "SPAU26", "AURS26"],
-    "generation_mode": "rules_only",
-    "context_strategy": "campaign_name_primary_description_secondary"
+    "generated_code": "AULI2026"
   },
   "meta": {
     "timestamp": "2026-02-23T03:00:00+00:00",
@@ -168,9 +163,7 @@ curl -X POST http://127.0.0.1:8081/generate \
 
 Response contract is intentionally aligned with the Python service:
 - `ok`
-- `data.campaign_name`
 - `data.generated_code`
-- `data.candidates`
 - `meta.timestamp`
 - `meta.request_id`
 - `meta.processing_ms`

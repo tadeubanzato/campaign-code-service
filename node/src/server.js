@@ -72,12 +72,7 @@ app.post('/generate', (req, res) => {
     return res.json({
       ok: true,
       data: {
-        campaign_name: campaignName,
-        campaign_description: campaignDescription,
         generated_code: candidates[0],
-        candidates,
-        generation_mode: 'rules_only',
-        context_strategy: 'campaign_name_primary_description_secondary',
       },
       meta: {
         timestamp: utcNowIso(),

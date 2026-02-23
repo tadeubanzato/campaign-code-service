@@ -118,12 +118,7 @@ def generate():
         {
             "ok": True,
             "data": {
-                "campaign_name": campaign_name,
-                "campaign_description": campaign_description,
-                "generated_code": codes[0],
-                "candidates": codes,
-                "generation_mode": "rules_only",
-                "context_strategy": "campaign_name_primary_description_secondary",
+                "generated_code": codes[0]
             },
             "meta": {
                 "timestamp": utc_now_iso(),
