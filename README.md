@@ -8,6 +8,7 @@ Professional-grade lightweight API to generate human-readable 6–12 character c
 - Human-readable alphanumeric code candidates
 - Preserves explicit acronym hints from input context (e.g., `MLB`, `NBA`) and prioritizes them in top candidates
 - Context weighting: `campaign_name` is primary; `campaign_description` is secondary
+- Semantic deterministic templates (e.g., STREAM→STRM, FREE→FREE, TRIAL→TRY) to improve end-user relevance
 - Strong API contract with:
   - structured success response
   - structured error response

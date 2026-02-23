@@ -1,5 +1,24 @@
 const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);
 
+const INTENT_MAP = {
+  STREAM: 'STRM',
+  STREAMING: 'STRM',
+  WATCH: 'WCH',
+  LIVE: 'LIVE',
+  FREE: 'FREE',
+  TRIAL: 'TRY',
+  OPENING: 'OPEN',
+  SEASON: 'SEAS',
+  PLAYOFF: 'PLYF',
+  PLAYOFFS: 'PLYF',
+  FAN: 'FAN',
+  FANS: 'FANS',
+  REDEEM: 'RDM',
+  PROMO: 'PRMO',
+  OFFER: 'OFFR',
+  TV: 'TV',
+};
+
 function cleanTokens(name) {
   return (name.toUpperCase().match(/[A-Z0-9]+/g) || []).filter(Boolean);
 }
@@ -12,6 +31,20 @@ function acronymHints(raw) {
     if (!seen.has(h)) {
       out.push(h);
       seen.add(h);
+    }
+  }
+  return out;
+}
+
+function intentTokens(tokens) {
+  const out = [];
+  const seen = new Set();
+  for (const t of tokens) {
+    const k = t.replace(/[^A-Z]/g, '');
+    const v = INTENT_MAP[k];
+    if (v && !seen.has(v)) {
+      out.push(v);
+      seen.add(v);
     }
   }
   return out;
@@ -103,12 +136,17 @@ export function generateCodes(
   const year = includeYear ? extractYear(tokens) : '';
   const year2 = year ? year.slice(-2) : '';
   const words = lettersOnly(tokens);
+  const intents = intentTokens(tokens);
 
   const cands = new Set();
   const priority = [];
   for (const a of hints) {
     if (year) priority.push(a + year);
     if (year2) priority.push(a + year2);
+    for (const it of intents.slice(0, 4)) {
+      priority.push(a + it + year2);
+      priority.push(a + it);
+    }
     priority.push(a + String(randInt(20, 99)));
   }
 
@@ -130,6 +168,14 @@ export function generateCodes(
     if (words.length >= 3) {
       cands.add(words[0].slice(0, 2) + words[1].slice(0, 2) + words[2].slice(0, 2) + year2);
       cands.add(words[0][0] + words[1].slice(0, 2) + words[2].slice(0, 2) + year);
+    }
+  }
+
+  if (words.length && intents.length) {
+    const base = words[0].slice(0, 3);
+    for (const it of intents.slice(0, 4)) {
+      cands.add(base + it + year2);
+      cands.add(base + it);
     }
   }
 

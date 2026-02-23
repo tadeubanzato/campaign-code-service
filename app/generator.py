@@ -4,6 +4,25 @@ from typing import List, Optional
 
 VOWELS = set("AEIOU")
 
+INTENT_MAP = {
+    "STREAM": "STRM",
+    "STREAMING": "STRM",
+    "WATCH": "WCH",
+    "LIVE": "LIVE",
+    "FREE": "FREE",
+    "TRIAL": "TRY",
+    "OPENING": "OPEN",
+    "SEASON": "SEAS",
+    "PLAYOFF": "PLYF",
+    "PLAYOFFS": "PLYF",
+    "FAN": "FAN",
+    "FANS": "FANS",
+    "REDEEM": "RDM",
+    "PROMO": "PRMO",
+    "OFFER": "OFFR",
+    "TV": "TV",
+}
+
 
 def _clean_tokens(name: str) -> List[str]:
     parts = re.findall(r"[A-Za-z0-9]+", name.upper())
@@ -77,6 +96,19 @@ def _fit(code: str, min_len: int, max_len: int) -> str:
     return code
 
 
+def _intent_tokens(tokens: List[str]) -> List[str]:
+    intents = []
+    seen = set()
+    for t in tokens:
+        k = re.sub(r"[^A-Z]", "", t.upper())
+        if k in INTENT_MAP:
+            v = INTENT_MAP[k]
+            if v not in seen:
+                intents.append(v)
+                seen.add(v)
+    return intents
+
+
 def generate_codes(
     campaign_name: str,
     min_len: int = 6,
@@ -99,6 +131,7 @@ def generate_codes(
     year = _extract_year(tokens) if include_year else ""
     year2 = year[-2:] if year else ""
     words = _letters_only(tokens)
+    intents = _intent_tokens(tokens)
 
     cands = set()
     priority = []
@@ -108,6 +141,9 @@ def generate_codes(
             priority.append(a + year)
         if year2:
             priority.append(a + year2)
+        for it in intents[:4]:
+            priority.append(a + it + year2)
+            priority.append(a + it)
         priority.append(a + str(random.randint(20, 99)))
 
     # patterns
@@ -128,6 +164,13 @@ def generate_codes(
         if len(words) >= 3:
             cands.add(words[0][:2] + words[1][:2] + words[2][:2] + year2)
             cands.add(words[0][0] + words[1][:2] + words[2][:2] + year)
+
+    # semantic templates when no explicit acronym hint
+    if words and intents:
+        base = words[0][:3]
+        for it in intents[:4]:
+            cands.add(base + it + year2)
+            cands.add(base + it)
 
     # fallback random blends
     for _ in range(24):
