@@ -130,9 +130,48 @@ Production container command uses Gunicorn:
 gunicorn -w 2 -b 0.0.0.0:8080 app.main:app
 ```
 
+## Node.js version (kept alongside Python)
+
+A full Node.js implementation with the same API contract is included under `node/`.
+
+### Run Node locally
+
+```bash
+cd campaign-code-service/node
+npm install
+npm run start
+```
+
+Node service defaults to port `8081`.
+
+Test:
+
+```bash
+curl http://127.0.0.1:8081/health
+
+curl -X POST http://127.0.0.1:8081/generate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "campaign_name":"Spring Aurora Lights 2026",
+    "min_len":6,
+    "max_len":10,
+    "include_year":true,
+    "count":8
+  }'
+```
+
+Response contract is intentionally aligned with the Python service:
+- `ok`
+- `data.campaign_name`
+- `data.generated_code`
+- `data.candidates`
+- `meta.timestamp`
+- `meta.request_id`
+- `meta.processing_ms`
+
 ## Azure-ready
 
-This container can be deployed directly to:
+Both versions are deployable to:
 - Azure Container Apps
 - Azure App Service (container)
 - Azure Container Instances
