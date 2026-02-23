@@ -69,7 +69,8 @@ def generate():
         return error_response(400, "VALIDATION_ERROR", "Invalid request fields", str(e))
 
     try:
-        combined_context = campaign_name if not campaign_description else f"{campaign_name} {campaign_description}"
+        # campaign_name is primary context; description is secondary signal
+        combined_context = campaign_name if not campaign_description else f"{campaign_name} {campaign_name} {campaign_description}"
         codes = generate_codes(
             combined_context,
             min_len=min_len,
@@ -122,6 +123,7 @@ def generate():
                 "generated_code": codes[0],
                 "candidates": codes,
                 "generation_mode": "rules_only",
+                "context_strategy": "campaign_name_primary_description_secondary",
             },
             "meta": {
                 "timestamp": utc_now_iso(),

@@ -7,6 +7,7 @@ Professional-grade lightweight API to generate human-readable 6–12 character c
 - Deterministic + fast generation (no heavy model required)
 - Human-readable alphanumeric code candidates
 - Preserves explicit acronym hints from input context (e.g., `MLB`, `NBA`) and prioritizes them in top candidates
+- Context weighting: `campaign_name` is primary; `campaign_description` is secondary
 - Strong API contract with:
   - structured success response
   - structured error response
@@ -60,7 +61,8 @@ Success (`200`):
     "campaign_description": "Seasonal in-store lighting campaign for premium home decor shoppers in North America.",
     "generated_code": "AULI2026",
     "candidates": ["AULI2026", "SPAU26", "AURS26"],
-    "generation_mode": "rules_only"
+    "generation_mode": "rules_only",
+    "context_strategy": "campaign_name_primary_description_secondary"
   },
   "meta": {
     "timestamp": "2026-02-23T03:00:00+00:00",

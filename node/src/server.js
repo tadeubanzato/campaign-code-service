@@ -56,8 +56,9 @@ app.post('/generate', (req, res) => {
   }
 
   try {
+    // campaign_name is primary context; description is secondary signal
     const combinedContext = campaignDescription
-      ? `${campaignName} ${campaignDescription}`
+      ? `${campaignName} ${campaignName} ${campaignDescription}`
       : campaignName;
 
     const candidates = generateCodes(combinedContext, {
@@ -76,6 +77,7 @@ app.post('/generate', (req, res) => {
         generated_code: candidates[0],
         candidates,
         generation_mode: 'rules_only',
+        context_strategy: 'campaign_name_primary_description_secondary',
       },
       meta: {
         timestamp: utcNowIso(),
